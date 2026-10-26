@@ -1,0 +1,57 @@
+name: Update snow forecast
+
+# Runs the snow agent every 3 hours, commits the fresh data, and republishes the site on GitHub Pages.
+on:
+  schedule:
+    - cron: "17 */3 * * *"      # 03:17, 06:17, ... UTC (models refresh roughly every 3-6 hours)
+  workflow_dispatch:            # "Run workflow" button in the Actions tab
+  push:
+    branches: [main]
+    paths: ["agent/**", "config/**", "docs/**", ".github/workflows/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snow-forecast
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run the snow agent
+        run: python agent/snow_agent.py
+      - name: Commit new data
+        run: |
+          git config user.name "snow-agent"
+          git config user.email "snow-agent@users.noreply.github.com"
+          git add docs/data
+          if git diff --cached --quiet; then
+            echo "No changes in the forecast data."
+          else
+            git commit -m "Update snow forecast"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

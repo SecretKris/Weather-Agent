@@ -1,0 +1,13 @@
+{
+  "_comment": "Ski spots to track. elevation = mid-slope metres (Open-Meteo downscales temperature to it). Coordinates are approximate - edit freely, add spots, or remove any you don't care about.",
+  "spots": [
+    {"id": "gaizinkalns", "name": "Gaiziņkalns", "region": "Madona highlands", "lat": 56.866, "lon": 25.873, "elevation": 277, "kind": "ski"},
+    {"id": "zagarkalns",  "name": "Žagarkalns",  "region": "Cēsis area",       "lat": 57.312, "lon": 25.275, "elevation": 82,  "kind": "ski"},
+    {"id": "ozolkalns",   "name": "Ozolkalns",   "region": "Amata",            "lat": 57.220, "lon": 25.050, "elevation": 72,  "kind": "ski"},
+    {"id": "sigulda",     "name": "Sigulda",     "region": "Gauja valley",     "lat": 57.154, "lon": 24.860, "elevation": 58,  "kind": "ski"},
+    {"id": "milzkalns",   "name": "Milzkalns",   "region": "Tukums / Smārde",  "lat": 56.954, "lon": 23.337, "elevation": 93,  "kind": "ski"},
+    {"id": "ventspils",   "name": "Ventspils",   "region": "Kurzeme coast",    "lat": 57.390, "lon": 21.564, "elevation": 33,  "kind": "ski"},
+    {"id": "sarkankalns", "name": "Sarkaņkalns", "region": "Rēzekne / Latgale","lat": 56.510, "lon": 27.340, "elevation": 180, "kind": "ski"},
+    {"id": "riga",        "name": "Rīga",        "region": "City reference",   "lat": 56.946, "lon": 24.106, "elevation": 6,   "kind": "city"}
+  ]
+}

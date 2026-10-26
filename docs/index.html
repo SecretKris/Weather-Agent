@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Snow watch Latvia</title>
+<meta name="description" content="When can you ski in Latvia? Eleven weather models, one verdict per ski hill, updated every few hours.">
+<meta name="theme-color" content="#0c1f2b">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230c1f2b'/%3E%3Cg stroke='%23eef6fa' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M16 5v22M6.5 10.5l19 11M25.5 10.5l-19 11'/%3E%3C/g%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="wrap">
+    <header class="top">
+      <div class="brand">Snow watch Latvia <small>Will the slopes open?</small></div>
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Riding style">
+          <button data-profile="park" aria-pressed="true">Freestyle / park</button>
+          <button data-profile="groomed" aria-pressed="false">Groomed runs</button>
+        </div>
+        <label class="check"><input type="checkbox" id="machine" checked> Count machine snow</label>
+      </div>
+    </header>
+    <div id="status" class="status" aria-live="polite">Loading the forecast…</div>
+
+    <main>
+      <section class="verdict" aria-live="polite">
+        <h1 id="h1">Checking the models…</h1>
+        <p id="vp"></p>
+        <span id="trend" class="trend"></span>
+      </section>
+
+      <div class="stage">
+        <canvas id="scene" role="img" aria-label="Animated ski hill that shows snow cover, snowfall and lift status for the selected hour of the forecast"></canvas>
+        <div id="readout" class="readout" aria-live="off"></div>
+        <div class="scrub">
+          <button id="play" class="play" aria-label="Play the forecast as a time-lapse"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></button>
+          <input id="range" type="range" min="0" max="383" value="0" step="1" aria-label="Scrub through the next 15 days">
+          <span id="hint" class="hint"></span>
+        </div>
+      </div>
+
+      <ul id="plates" class="plates" aria-label="Ski hills"></ul>
+
+      <section class="block">
+        <h2>Day by day</h2>
+        <p class="lede">Colour shows the verdict for your riding style. Dots show how many of the 11 models still cover that day. Tap a day to jump the hill above to midday.</p>
+        <ul id="days" class="daystrip"></ul>
+      </section>
+
+      <section class="block twocol">
+        <div>
+          <h2 id="h-cover">Snow on the slope</h2>
+          <div id="leg-cover" class="legend"></div>
+          <div id="chart-cover" class="chart"></div>
+        </div>
+        <div>
+          <h2 id="h-temp">Temperature and snowmaking weather</h2>
+          <div id="leg-temp" class="legend"></div>
+          <div id="chart-temp" class="chart"></div>
+        </div>
+      </section>
+
+      <section class="block">
+        <h2>What each model thinks</h2>
+        <p class="lede">The cold models matter most right now. A model that never gets below freezing during its forecast cannot support a ski day.</p>
+        <div id="models" class="mrows"></div>
+        <p id="model-note" class="dayhint"></p>
+      </section>
+
+      <section class="block">
+        <h2>Weeks ahead</h2>
+        <p class="lede">How often a week averages below freezing across 50 possible winters from ECMWF's seasonal ensemble. The first two weeks are faded because the models above cover them in far more detail. Treat everything past three weeks as a tilt, not a forecast.</p>
+        <div class="legend"><span><i style="border-color:var(--nat)"></i>Week averages below 0 °C</span><span><i style="border-color:var(--art)"></i>Week averages below −3 °C (snowmaking-grade)</span></div>
+        <div id="outlook" class="chart"></div>
+      </section>
+
+      <section class="block">
+        <h2>The agent's read</h2>
+        <div id="brief" class="brief"></div>
+      </section>
+
+      <details><summary>How the agent decides</summary><div id="how" class="inner"></div></details>
+      <details><summary>Daily numbers as a table</summary><div id="tbl" class="tablewrap"></div></details>
+    </main>
+
+    <footer>
+      <div>Weather data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0), from ECMWF, NOAA, DWD, Environment Canada, Météo-France, UK Met Office, MET Norway, DMI, KNMI and JMA. Hill positions are approximate.</div>
+      <div>This is a forecast model, not an official report. Check with the resort before you drive.</div>
+      <div id="err"></div>
+    </footer>
+  </div>
+</div>
+<noscript><div class="wrap err">This dashboard needs JavaScript to draw the forecast.</div></noscript>
+<script src="scene.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
