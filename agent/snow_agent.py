@@ -121,7 +121,10 @@ def http_json(params, tries=5, url=API, timeout=25):
             last = f"HTTP {e.code}: {body}"
             if e.code == 429 and "Daily" in body:   # quota used up for today: retrying cannot help
                 break
-            if e.code in (429, 500, 502, 503, 504) and i < tries - 1:
+            if e.code == 429 and i < tries - 1:     # per-minute limit: wait for the window to reset
+                time.sleep(62)
+                continue
+            if e.code in (500, 502, 503, 504) and i < tries - 1:
                 time.sleep(5 * (i + 1))
                 continue
             break

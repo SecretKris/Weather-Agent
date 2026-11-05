@@ -40,8 +40,8 @@ FORECAST_URL = "https://api.open-meteo.com/v1/forecast"
 ENSEMBLE_URL = "https://ensemble-api.open-meteo.com/v1/ensemble"
 
 LAT = 60
-RING_DET = list(range(0, 360, 15))     # 24 points: resolves waves 1-4 cleanly
-RING_ENS = list(range(0, 360, 30))     # 12 points: plenty for a zonal mean
+RING_DET = [i * 22.5 for i in range(16)]   # 16 points: resolves waves 1-4 cleanly
+RING_ENS = [i * 45.0 for i in range(8)]    # 8 points: exact zonal mean for waves 1-3 (the ones that matter)
 
 DET_MODELS = [
     ("ecmwf_ifs025",         "ECMWF IFS"),
@@ -71,6 +71,16 @@ DIAG: list[str] = []       # timings and quota cost of every call, saved in stra
 
 def over_budget():
     return time.time() - T_START > TIME_BUDGET_S
+
+
+def pace():
+    """Open-Meteo allows 600 cost units a minute: after a call, wait long enough to stay under that on average."""
+    try:
+        wait = min(75.0, float(http_json.last_cost or 0) / 10.0 + 2.0)
+    except (TypeError, ValueError):
+        wait = 5.0
+    if not over_budget():
+        time.sleep(wait)
 
 
 def timed(label, fn, *a, **kw):
@@ -130,9 +140,9 @@ def as_list(raw):
 # ------------------------------------------------------ deterministic part --
 def fetch_det():
     hv = []
-    for lev in (10, 50):
-        hv += [f"wind_speed_{lev}hPa", f"wind_direction_{lev}hPa", f"temperature_{lev}hPa", f"geopotential_height_{lev}hPa"]
-    hv += ["wind_speed_100hPa", "wind_direction_100hPa", "temperature_100hPa"]
+    hv += ["wind_speed_10hPa", "wind_direction_10hPa", "temperature_10hPa", "geopotential_height_10hPa",
+           "wind_speed_50hPa", "wind_direction_50hPa",
+           "wind_speed_100hPa", "wind_direction_100hPa", "temperature_100hPa"]
     ids = ",".join(m for m, _ in DET_MODELS)
     raw = http_json({
         "latitude": ",".join([str(LAT)] * len(RING_DET)), "longitude": ",".join(str(x) for x in RING_DET),
@@ -142,7 +152,7 @@ def fetch_det():
     locs = as_list(raw)
     pole = None
     try:  # polar temperature is optional: the SSW verdict still works without it
-        time.sleep(2)
+        time.sleep(3)
         pole = as_list(http_json({"latitude": 90, "longitude": 0, "hourly": "temperature_10hPa", "models": ids,
                                   "forecast_days": 16, "timezone": "GMT"}, url=FORECAST_URL, timeout=60))[0]
     except Exception as e:
@@ -170,7 +180,7 @@ def analyse_det_model(model, pack):
         return out
 
     L = {lev: level_arrays(lev) for lev in (10, 50, 100)}
-    series = {k: [None] * n for k in ("u10", "u50", "w1_10", "w2_10", "w1_50", "w2_50", "hf100", "t10_ring")}
+    series = {k: [None] * n for k in ("u10", "u50", "w1_10", "w2_10", "hf100", "t10_ring")}
 
     def ok(arrs, i):
         return all(a is not None and a[i] is not None for a in arrs)
@@ -181,10 +191,10 @@ def analyse_det_model(model, pack):
             if ok(ws, i) and ok(wd, i):
                 series[f"u{lev}"][i] = mean([uv(ws[j][i], wd[j][i])[0] for j in range(len(H))])
             z = L[lev]["geopotential_height"]
-            if ok(z, i):
+            if lev == 10 and ok(z, i):
                 vals = [z[j][i] for j in range(len(H))]
-                series[f"w1_{lev}"][i] = wave_amp(vals, RING_DET, 1)
-                series[f"w2_{lev}"][i] = wave_amp(vals, RING_DET, 2)
+                series["w1_10"][i] = wave_amp(vals, RING_DET, 1)
+                series["w2_10"][i] = wave_amp(vals, RING_DET, 2)
         t10 = L[10]["temperature"]
         if ok(t10, i):
             series["t10_ring"][i] = mean([t10[j][i] for j in range(len(H))])
@@ -204,7 +214,7 @@ def analyse_det_model(model, pack):
     out = {"dates": dates}
     for k in ("u10", "u50"):
         out[k] = [rnd(d[k].get(x)) for x in dates]
-    for k in ("w1_10", "w2_10", "w1_50", "w2_50"):
+    for k in ("w1_10", "w2_10"):
         out[k] = [rnd(d[k].get(x), 0) for x in dates]
     out["hf100"] = [rnd(d["hf100"].get(x)) for x in dates]
     out["pole_gap"] = [rnd(pole_daily[x] - d["t10_ring"][x]) if x in pole_daily and x in d["t10_ring"] else None for x in dates]
@@ -509,6 +519,7 @@ def main():
     else:
         try:
             pack = timed("deterministic ring", fetch_det)
+            pace()
             models = {}
             for mid, name in DET_MODELS:
                 try:
@@ -536,8 +547,8 @@ def main():
             try:
                 if over_budget():
                     raise RuntimeError("skipped, time budget used up")
-                time.sleep(2)
                 locs = timed(src["name"], fetch_ens, src)
+                pace()
                 for lev in src["levels"]:
                     results.append(analyse_ens(src, locs, lev))
             except Exception as e:
@@ -571,5 +582,25 @@ def main():
         print("notes:", *errors, sep="\n  ", file=sys.stderr)
 
 
+STATUS = ROOT / "docs" / "data" / "strat_status.json"
+
+
+def write_status(ok, error=None):
+    try:
+        STATUS.parent.mkdir(parents=True, exist_ok=True)
+        STATUS.write_text(json.dumps({"ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "ok": ok,
+                                      "error": error, "diagnostics": DIAG}, ensure_ascii=False), encoding="utf8")
+    except OSError:
+        pass
+
+
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+        write_status(True)
+    except SystemExit as e:           # main() uses sys.exit("message") for hard failures
+        write_status(False, str(e.code))
+        raise
+    except Exception as e:
+        write_status(False, f"{type(e).__name__}: {e}")
+        raise

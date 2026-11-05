@@ -9,6 +9,18 @@ GitHub Actions (every 3 h)                GitHub Pages (free)
   + a 50-member seasonal ensemble            so history is kept               animates the hill
 ```
 
+## Stratosphere watch (polar vortex and sudden warmings)
+
+A second module, `agent/strat.py`, runs after the snow agent and writes `docs/data/strat.json`. The dashboard shows it as its own section.
+
+- **Vortex strength:** zonal-mean wind at 60°N, 10 hPa and 50 hPa, from ECMWF IFS, ECMWF AIFS, NOAA GFS, UK Met Office and Canada GEM.
+- **Wave activity:** wave 1 and wave 2 amplitude of the geopotential height at 10 hPa, and eddy heat flux at 100 hPa.
+- **SSW signals:** wind reversal (westerly to easterly) at 10 hPa, plus the pole becoming warmer than 60°N.
+- **Ensemble consensus:** the share of members that reverse the wind, day by day, from the ECMWF IFS and AIFS ensembles (51 members each) and the GFS ensemble (31 members, out to 35 days at 50 hPa).
+- **Downward propagation:** from the consensus reversal date, the lower stratosphere is placed 1 to 2 weeks later (or read directly from the models) and the tropospheric response 3 to 6 weeks later, drawn as a timeline. With no signal, it states the blind spot: the earliest date a warming beyond the forecast horizon could reach Latvia.
+
+It makes about 5 API calls per run and only refreshes the deterministic models every 5.5 hours and the ensembles every 11 hours, so most 3-hourly runs reuse the previous data. Its settings (thresholds, lags, models) are at the top of `agent/strat.py`. `python agent/strat.py --force` refetches everything.
+
 ## What the agent does each run
 
 1. Pulls hourly forecasts for each spot in `config/spots.json` from 11 models: ECMWF IFS, ECMWF AIFS (AI), NOAA GFS, DWD ICON, Canada GEM, Météo-France, UK Met Office, MET Norway, DMI HARMONIE, KNMI HARMONIE and JMA.
@@ -39,12 +51,14 @@ python -m http.server -d docs     # then open http://localhost:8000
 
 - **Ski hills:** edit `config/spots.json`. Coordinates are approximate, and `elevation` (metres, mid-slope) makes temperatures match the hill rather than the valley.
 - **What counts as skiable:** the `PROFILES`, `SKIABLE` and snow-gun constants at the top of `agent/snow_agent.py`. The defaults assume freestyle / park needs 20 cm to score at all and 45 cm for full marks.
+- **Stratosphere rules:** the constants at the top of `agent/strat.py` (reversal season, what counts as a weakening or strong heat-flux pulse, lag in weeks).
 - **Look and feel:** `docs/style.css` (colours are variables at the top) and `docs/scene.js` (the animated hill).
 
 ## Honest limits
 
 - Models are not weather stations. Latvian hills are small, and a 9 to 25 km model grid cannot see them. Treat dates as "when the weather allows", then check the resort's own page for lift status.
 - The machine-snow layer assumes the resort runs its guns whenever it is cold enough. Switch "Count machine snow" off for natural snow only.
+- The stratosphere section only sees about 16 days ahead, so a warming that starts later is invisible until it enters the forecast. The 3 to 6 week surface lag is a typical range, not a promise: some warmings never reach the surface, and the effect is a shift in odds toward colder, more blocked weather over northern Europe.
 - Beyond about 10 days models disagree a lot, which is why every verdict shows how many models agree. The weeks-ahead chart has little skill past three weeks.
 
 Weather data by [Open-Meteo.com](https://open-meteo.com/) (CC BY 4.0).

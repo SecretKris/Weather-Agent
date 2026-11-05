@@ -32,6 +32,7 @@
         <h1 id="h1">Checking the models…</h1>
         <p id="vp"></p>
         <span id="trend" class="trend"></span>
+        <span id="s-hero" class="shero" hidden></span>
       </section>
 
       <div class="stage">
@@ -79,6 +80,57 @@
         <div id="outlook" class="chart"></div>
       </section>
 
+      <section class="block strat" id="strat" hidden>
+        <h2>Stratosphere and the polar vortex</h2>
+        <p class="lede">In winter a ring of fast westerly wind circles the Arctic, 20 to 50 km up. When it breaks down in a sudden stratospheric warming, cold tends to reach Europe three to six weeks later. This is the early-warning layer behind the weeks-ahead outlook.</p>
+        <div id="s-verdict" class="sverdict"></div>
+        <dl id="s-facts" class="sfacts"></dl>
+
+        <div class="shead">
+          <div>
+            <h3 id="s-h-wind">Vortex wind</h3>
+            <p id="s-p-wind" class="lede"></p>
+          </div>
+          <div class="seg" role="group" aria-label="Height in the stratosphere">
+            <button data-slevel="10" aria-pressed="true">10 hPa, upper</button>
+            <button data-slevel="50" aria-pressed="false">50 hPa, lower</button>
+          </div>
+        </div>
+        <div id="s-leg-wind" class="legend"></div>
+        <div id="s-wind" class="chart"></div>
+
+        <h3>Share of ensemble members whose wind has reversed</h3>
+        <div id="s-leg-prob" class="legend"></div>
+        <div id="s-prob" class="chart"></div>
+
+        <div id="s-leg-models" class="legend sgap-legend" aria-label="Model colours"></div>
+        <div class="twocol sgap">
+          <div>
+            <div class="shead tight">
+              <h3 id="s-h-wave">Wave 1 amplitude at 10 hPa</h3>
+              <div class="seg" role="group" aria-label="Wave number">
+                <button data-swave="1" aria-pressed="true">Wave 1</button>
+                <button data-swave="2" aria-pressed="false">Wave 2</button>
+              </div>
+            </div>
+            <p class="lede">Strength of the planetary wave pattern at 60°N, in metres of geopotential height. Wave 1 pushes the vortex off the pole, wave 2 stretches it toward a split.</p>
+            <div id="s-wave" class="chart"></div>
+          </div>
+          <div>
+            <div class="shead tight"><h3>Heat flux at 100 hPa</h3></div>
+            <p class="lede">How much wave energy is flowing up into the stratosphere. Pulses above about 30 K m/s often come 1 to 2 weeks before a warming.</p>
+            <div id="s-heat" class="chart"></div>
+          </div>
+        </div>
+
+        <h3>When it would reach the weather</h3>
+        <div id="s-timeline" class="chart"></div>
+        <h3>The agent's read</h3>
+        <div id="s-brief" class="brief"></div>
+        <details><summary>How the stratosphere watch decides</summary><div id="s-how" class="inner"></div></details>
+        <p id="s-err" class="dayhint"></p>
+      </section>
+
       <section class="block">
         <h2>The agent's read</h2>
         <div id="brief" class="brief"></div>
@@ -98,5 +150,6 @@
 <noscript><div class="wrap err">This dashboard needs JavaScript to draw the forecast.</div></noscript>
 <script src="scene.js"></script>
 <script src="app.js"></script>
+<script src="strat.js"></script>
 </body>
 </html>
