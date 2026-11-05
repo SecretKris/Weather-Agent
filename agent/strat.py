@@ -66,6 +66,7 @@ LOWER_STRAT_LAG_DAYS = (7, 14)           # typical 10 hPa -> 50 hPa lag when the
 MIN_VALID_HOURS = 20
 TIME_BUDGET_S = 420        # stop fetching after 7 minutes so a slow API never holds up the snow forecast
 T_START = time.time()
+ERRORS: list[str] = []     # every problem met, saved in the status file so a failed run can be diagnosed
 DIAG: list[str] = []       # timings and quota cost of every call, saved in strat.json for tuning
 
 
@@ -144,18 +145,25 @@ def fetch_det():
            "wind_speed_50hPa", "wind_direction_50hPa",
            "wind_speed_100hPa", "wind_direction_100hPa", "temperature_100hPa"]
     ids = ",".join(m for m, _ in DET_MODELS)
-    raw = http_json({
-        "latitude": ",".join([str(LAT)] * len(RING_DET)), "longitude": ",".join(str(x) for x in RING_DET),
-        "hourly": ",".join(hv), "models": ids, "forecast_days": 16, "timezone": "GMT", "wind_speed_unit": "ms",
-    }, url=FORECAST_URL, timeout=180)
-    print(f"  det ring fetched (cost {http_json.last_cost})", flush=True)
-    locs = as_list(raw)
+    locs = []
+    CH = 4   # four ring points per request keeps every response small enough for proxies and rate limits
+    for a in range(0, len(RING_DET), CH):
+        lons = RING_DET[a:a + CH]
+        raw = http_json({
+            "latitude": ",".join([str(LAT)] * len(lons)), "longitude": ",".join(str(x) for x in lons),
+            "hourly": ",".join(hv), "models": ids, "forecast_days": 16, "timezone": "GMT", "wind_speed_unit": "ms",
+        }, url=FORECAST_URL, timeout=120)
+        locs += as_list(raw)
+        print(f"  det ring {a + len(lons)}/{len(RING_DET)} fetched (cost {http_json.last_cost})", flush=True)
+        if a + CH < len(RING_DET):
+            pace()
     pole = None
     try:  # polar temperature is optional: the SSW verdict still works without it
         time.sleep(3)
         pole = as_list(http_json({"latitude": 90, "longitude": 0, "hourly": "temperature_10hPa", "models": ids,
                                   "forecast_days": 16, "timezone": "GMT"}, url=FORECAST_URL, timeout=60))[0]
     except Exception as e:
+        ERRORS.append(f"pole temperature: {e}")
         print(f"  pole temperature unavailable: {e}", file=sys.stderr, flush=True)
     return {"locs": locs, "pole": pole}
 
@@ -508,7 +516,7 @@ def main():
     except Exception:
         prev = {}
     now_iso = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    errors = []
+    errors = ERRORS
     parts = {}
 
     # deterministic models -------------------------------------------------
@@ -589,7 +597,7 @@ def write_status(ok, error=None):
     try:
         STATUS.parent.mkdir(parents=True, exist_ok=True)
         STATUS.write_text(json.dumps({"ran_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "ok": ok,
-                                      "error": error, "diagnostics": DIAG}, ensure_ascii=False), encoding="utf8")
+                                      "error": error, "errors": ERRORS, "diagnostics": DIAG}, ensure_ascii=False), encoding="utf8")
     except OSError:
         pass
 
