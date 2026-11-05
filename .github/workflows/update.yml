@@ -22,11 +22,17 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref_name }}   # always the latest branch head, even for push-triggered runs
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - name: Run the snow agent
         run: python agent/snow_agent.py
+      - name: Run the stratosphere watch
+        continue-on-error: true        # a stratosphere hiccup must never block the snow forecast
+        timeout-minutes: 9
+        run: python agent/strat.py
       - name: Commit new data
         run: |
           git config user.name "snow-agent"
@@ -36,7 +42,7 @@ jobs:
             echo "No changes in the forecast data."
           else
             git commit -m "Update snow forecast"
-            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git pull --rebase -X theirs origin "${GITHUB_REF_NAME}"   # on a data conflict, the freshly generated files win
             git push
           fi
       - uses: actions/upload-pages-artifact@v5

@@ -105,7 +105,7 @@ def wetbulb(t, rh):
             + 0.00391838 * rh ** 1.5 * math.atan(0.023101 * rh) - 4.686035)
 
 
-def http_json(params, tries=5, url=API):
+def http_json(params, tries=5, url=API, timeout=25):
     q = urllib.parse.urlencode(params, safe=",")
     last = None
     for i in range(tries):
@@ -113,11 +113,14 @@ def http_json(params, tries=5, url=API):
             req = urllib.request.Request(
                 f"{url}?{q}",
                 headers={"User-Agent": "latvia-snow-agent/1.0 (personal, non-commercial)"})
-            with urllib.request.urlopen(req, timeout=25) as r:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                http_json.last_cost = r.headers.get("X-RateLimit-Cost")
                 return json.load(r)
         except urllib.error.HTTPError as e:
             body = e.read().decode("utf8", "ignore")[:300]
             last = f"HTTP {e.code}: {body}"
+            if e.code == 429 and "Daily" in body:   # quota used up for today: retrying cannot help
+                break
             if e.code in (429, 500, 502, 503, 504) and i < tries - 1:
                 time.sleep(5 * (i + 1))
                 continue
@@ -128,6 +131,9 @@ def http_json(params, tries=5, url=API):
                 time.sleep(3 * (i + 1))
                 continue
     raise RuntimeError(last or "request failed")
+
+
+http_json.last_cost = None
 
 
 # ------------------------------------------------------------ scoring ------
