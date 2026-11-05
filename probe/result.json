@@ -1,0 +1,565 @@
+{
+ "forecast": {
+  "ecmwf_ifs025": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 363,
+     "wind_direction": 363,
+     "temperature": 363,
+     "geopotential_height": 363
+    },
+    "20": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "30": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "50": {
+     "wind_speed": 363,
+     "wind_direction": 363,
+     "temperature": 363,
+     "geopotential_height": 363
+    },
+    "70": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "100": {
+     "wind_speed": 363,
+     "wind_direction": 363,
+     "temperature": 363,
+     "geopotential_height": 363
+    }
+   }
+  },
+  "ecmwf_aifs025_single": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 372,
+     "wind_direction": 372,
+     "temperature": 372,
+     "geopotential_height": 372
+    },
+    "20": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "30": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "50": {
+     "wind_speed": 372,
+     "wind_direction": 372,
+     "temperature": 372,
+     "geopotential_height": 372
+    },
+    "70": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "100": {
+     "wind_speed": 372,
+     "wind_direction": 372,
+     "temperature": 372,
+     "geopotential_height": 372
+    }
+   }
+  },
+  "gfs_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "20": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "30": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "50": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "70": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "100": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    }
+   }
+  },
+  "gfs025": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "20": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "30": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "50": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "70": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    },
+    "100": {
+     "wind_speed": 384,
+     "wind_direction": 384,
+     "temperature": 384,
+     "geopotential_height": 384
+    }
+   }
+  },
+  "icon_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "20": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "30": {
+     "wind_speed": 193,
+     "wind_direction": 193,
+     "temperature": 193,
+     "geopotential_height": 193
+    },
+    "50": {
+     "wind_speed": 193,
+     "wind_direction": 193,
+     "temperature": 193,
+     "geopotential_height": 193
+    },
+    "70": {
+     "wind_speed": 193,
+     "wind_direction": 193,
+     "temperature": 193,
+     "geopotential_height": 193
+    },
+    "100": {
+     "wind_speed": 193,
+     "wind_direction": 193,
+     "temperature": 193,
+     "geopotential_height": 193
+    }
+   }
+  },
+  "gem_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 243,
+     "wind_direction": 240,
+     "temperature": 243,
+     "geopotential_height": 243
+    },
+    "20": {
+     "wind_speed": 243,
+     "wind_direction": 240,
+     "temperature": 243,
+     "geopotential_height": 243
+    },
+    "30": {
+     "wind_speed": 243,
+     "wind_direction": 240,
+     "temperature": 243,
+     "geopotential_height": 243
+    },
+    "50": {
+     "wind_speed": 243,
+     "wind_direction": 240,
+     "temperature": 243,
+     "geopotential_height": 243
+    },
+    "70": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "100": {
+     "wind_speed": 243,
+     "wind_direction": 240,
+     "temperature": 243,
+     "geopotential_height": 243
+    }
+   }
+  },
+  "ukmo_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    },
+    "20": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    },
+    "30": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    },
+    "50": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    },
+    "70": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    },
+    "100": {
+     "wind_speed": 169,
+     "wind_direction": 169,
+     "temperature": 169,
+     "geopotential_height": 169
+    }
+   }
+  },
+  "jma_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "20": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "30": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "50": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "70": {
+     "wind_speed": 0,
+     "wind_direction": 0,
+     "temperature": 0,
+     "geopotential_height": 0
+    },
+    "100": {
+     "wind_speed": 270,
+     "wind_direction": 270,
+     "temperature": 270,
+     "geopotential_height": 270
+    }
+   }
+  },
+  "meteofrance_seamless": {
+   "hours_total": 384,
+   "nonnull": {
+    "10": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    },
+    "20": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    },
+    "30": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    },
+    "50": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    },
+    "70": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    },
+    "100": {
+     "wind_speed": 115,
+     "wind_direction": 115,
+     "temperature": 115,
+     "geopotential_height": 115
+    }
+   }
+  }
+ },
+ "ensemble": {
+  "ecmwf_ifs025": {
+   "wind_speed_50hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 363,
+     "wind_speed_50hPa_member01": 363,
+     "wind_speed_50hPa_member02": 363
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 363,
+     "wind_speed_10hPa_member01": 363,
+     "wind_speed_10hPa_member02": 363
+    }
+   },
+   "hours_total": 384
+  },
+  "ecmwf_aifs025": {
+   "wind_speed_50hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 372,
+     "wind_speed_50hPa_member01": 372,
+     "wind_speed_50hPa_member02": 372
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 51,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 372,
+     "wind_speed_10hPa_member01": 372,
+     "wind_speed_10hPa_member02": 372
+    }
+   },
+   "hours_total": 384
+  },
+  "gfs025": {
+   "wind_speed_50hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 0,
+     "wind_speed_50hPa_member01": 0,
+     "wind_speed_50hPa_member02": 0
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 0,
+     "wind_speed_10hPa_member01": 0,
+     "wind_speed_10hPa_member02": 0
+    }
+   },
+   "hours_total": 384
+  },
+  "gfs05": {
+   "wind_speed_50hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 384,
+     "wind_speed_50hPa_member01": 384,
+     "wind_speed_50hPa_member02": 384
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 31,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 0,
+     "wind_speed_10hPa_member01": 0,
+     "wind_speed_10hPa_member02": 0
+    }
+   },
+   "hours_total": 384
+  },
+  "icon_global": {
+   "wind_speed_50hPa": {
+    "series": 40,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 0,
+     "wind_speed_50hPa_member01": 0,
+     "wind_speed_50hPa_member02": 0
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 40,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 40,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 0,
+     "wind_speed_10hPa_member01": 0,
+     "wind_speed_10hPa_member02": 0
+    }
+   },
+   "hours_total": 384
+  },
+  "gem_global": {
+   "wind_speed_50hPa": {
+    "series": 21,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 0,
+     "wind_speed_50hPa_member01": 0,
+     "wind_speed_50hPa_member02": 0
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 21,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 21,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 0,
+     "wind_speed_10hPa_member01": 0,
+     "wind_speed_10hPa_member02": 0
+    }
+   },
+   "hours_total": 384
+  },
+  "ukmo_global_ensemble_20km": {
+   "wind_speed_50hPa": {
+    "series": 18,
+    "sample_nonnull": {
+     "wind_speed_50hPa": 0,
+     "wind_speed_50hPa_member01": 0,
+     "wind_speed_50hPa_member02": 0
+    }
+   },
+   "wind_speed_30hPa": {
+    "series": 18,
+    "sample_nonnull": {
+     "wind_speed_30hPa": 0,
+     "wind_speed_30hPa_member01": 0,
+     "wind_speed_30hPa_member02": 0
+    }
+   },
+   "wind_speed_10hPa": {
+    "series": 18,
+    "sample_nonnull": {
+     "wind_speed_10hPa": 0,
+     "wind_speed_10hPa_member01": 0,
+     "wind_speed_10hPa_member02": 0
+    }
+   },
+   "hours_total": 384
+  }
+ },
+ "notes": []
+}
