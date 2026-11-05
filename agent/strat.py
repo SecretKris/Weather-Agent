@@ -395,6 +395,20 @@ def assess(det, ens, today_iso):
         now["u10_end_date"] = d["dates"][max(i for i, v in enumerate(d["u10"]) if v is not None)]
         k = min(7, len(u) - 1)
         now["u10_change_7d"] = rnd(u[k] - u[0])
+        valid = [(i, v) for i, v in enumerate(d["u10"]) if v is not None]
+        wk = valid[:8]
+        i_min, v_min = min(wk, key=lambda t: t[1])
+        now["u10_min_7d"], now["u10_min_date"] = rnd(v_min), d["dates"][i_min]
+        east = [i for i, v in valid if v < 0]
+        if east:   # how long the reference model keeps the winds easterly, and when westerlies come back
+            first = east[0]
+            run = first
+            while run + 1 < len(d["u10"]) and d["u10"][run + 1] is not None and d["u10"][run + 1] < 0:
+                run += 1
+            now["east_days"] = run - first + 1
+            now["east_start"] = d["dates"][first]
+            back = run + 1 if run + 1 < len(d["u10"]) and d["u10"][run + 1] is not None else None
+            now["west_back"] = d["dates"][back] if back is not None else None
     # ---- waves & heat flux ----
     wave = None
     wref = next((m for m in ("ecmwf_ifs025", "gfs_seamless") if m in det["models"]), None)
@@ -452,7 +466,14 @@ def assess(det, ens, today_iso):
     lines = []
     if now.get("u10") is not None:
         ch = now.get("u10_change_7d")
-        trend = "" if ch is None else (f", {'weakening' if ch < -1 else 'strengthening' if ch > 1 else 'steady'} by {abs(ch):.0f} m/s over the next 7 days" if abs(ch) >= 1 else ", steady over the next 7 days")
+        if now.get("u10_min_7d") is not None and now["u10_min_7d"] < 0:
+            trend = f", dipping to {now['u10_min_7d']:.0f} m/s (easterly) around {fmt(now['u10_min_date'])}"
+        elif ch is None:
+            trend = ""
+        elif abs(ch) < 1:
+            trend = ", steady over the next 7 days"
+        else:
+            trend = f", {'weakening' if ch < 0 else 'strengthening'} by {abs(ch):.0f} m/s over the next 7 days"
         low = f" and {now['u50']:.0f} m/s at 50 hPa" if now.get("u50") is not None else ""
         lines.append(f"Vortex now: westerly winds of {now['u10']:.0f} m/s at 10 hPa{low} ({now['ref_model']}){trend}." if now["u10"] >= 0
                      else f"Vortex now: the 10 hPa winds are already easterly ({now['u10']:.0f} m/s) in {now['ref_model']}.")
@@ -475,6 +496,12 @@ def assess(det, ens, today_iso):
         lines.append(f"SSW signal: {'strong consensus' if status == 'ssw_signal' else 'early warning'}. "
                      f"{len(evidence)} of {n_src} sources reverse the 10 hPa winds, {spread}."
                      + (f" Share of members that reverse by {fmt(horizon_end)}: {ens_txt}." if ens_txt else ""))
+        if now.get("east_days"):
+            ed = now["east_days"]
+            back = f", and westerlies return by {fmt(now['west_back'])}" if now.get("west_back") else ", with no recovery before the forecast ends"
+            note = (" A short reversal like this usually has a weaker and less certain effect lower down than a long one."
+                    if ed <= 5 and now.get("west_back") else "")
+            lines.append(f"Duration: in {now['ref_model']} the winds stay easterly for {ed} day{'s' if ed != 1 else ''} from {fmt(now['east_start'])}{back}.{note}")
         if pole_warm:
             lines.append(f"The pole is forecast warmer than 60 N at 10 hPa from {fmt(min(pole_warm))}, the second SSW criterion.")
     if prop["milestones"]:

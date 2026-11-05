@@ -116,7 +116,7 @@
     if (!el) return;
     el.hidden = false;
     el.className = "shero " + a.status;
-    el.innerHTML = `Stratosphere: <a href="#strat">${esc(a.headline.toLowerCase())}</a>`;
+    el.innerHTML = `Stratosphere: <a href="#strat">${esc(a.headline.charAt(0).toLowerCase() + a.headline.slice(1))}</a>`;
   }
 
   function renderVerdict(a) {
@@ -129,7 +129,7 @@
     const ens10 = d.ens.series.filter((e) => e.level === 10);
     const ch = n.u10_change_7d;
     const facts = [
-      ["Wind at 10 hPa, 60°N", n.u10 != null ? `${num(n.u10)} m/s` : "–", n.u10 != null ? (n.u10 >= 0 ? "westerly" : "easterly") + (ch == null ? "" : Math.abs(ch) < 1 ? ", steady over 7 days" : `, ${ch < 0 ? "down" : "up"} ${num(Math.abs(ch))} m/s in 7 days`) : ""],
+      ["Wind at 10 hPa, 60°N", n.u10 != null ? `${num(n.u10)} m/s` : "–", n.u10 != null ? (n.u10 >= 0 ? "westerly" : "easterly") + (n.u10_min_7d != null && n.u10_min_7d < 0 ? `, dips to ${num(n.u10_min_7d)} on ${fmtDM(n.u10_min_date)}` : ch == null ? "" : Math.abs(ch) < 1 ? ", steady over 7 days" : `, ${ch < 0 ? "down" : "up"} ${num(Math.abs(ch))} m/s in 7 days`) : ""],
       ["Wind at 50 hPa, 60°N", n.u50 != null ? `${num(n.u50)} m/s` : "–", n.u50 != null ? (n.u50 >= 0 ? "westerly" : "easterly") : ""],
       ["Planetary waves at 10 hPa", w ? `${num(w.w1_now)} m · ${num(w.w2_now)} m` : "–", w ? `wave 1 · wave 2 now. Peak is ${w.dominant}` : ""],
       ["Heat flux at 100 hPa", h ? `${num(h.max_peak)} K m/s` : "–", h ? `peak on ${fmtDM(h.max_date)}: ${h.level}` : ""],
