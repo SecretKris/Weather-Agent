@@ -138,6 +138,11 @@ def as_list(raw):
     return raw if isinstance(raw, list) else [raw]
 
 
+def wrap_lons(lons):
+    """Ring angles run 0-360 deg east; Open-Meteo only accepts -180..180."""
+    return ",".join(str(x - 360.0 if x > 180 else x) for x in lons)
+
+
 # ------------------------------------------------------ deterministic part --
 def fetch_det():
     hv = []
@@ -150,7 +155,7 @@ def fetch_det():
     for a in range(0, len(RING_DET), CH):
         lons = RING_DET[a:a + CH]
         raw = http_json({
-            "latitude": ",".join([str(LAT)] * len(lons)), "longitude": ",".join(str(x) for x in lons),
+            "latitude": ",".join([str(LAT)] * len(lons)), "longitude": wrap_lons(lons),
             "hourly": ",".join(hv), "models": ids, "forecast_days": 16, "timezone": "GMT", "wind_speed_unit": "ms",
         }, url=FORECAST_URL, timeout=120)
         locs += as_list(raw)
@@ -238,7 +243,7 @@ def fetch_ens(src):
     for lev in src["levels"]:
         hv += [f"wind_speed_{lev}hPa", f"wind_direction_{lev}hPa"]
     raw = http_json({
-        "latitude": ",".join([str(LAT)] * len(RING_ENS)), "longitude": ",".join(str(x) for x in RING_ENS),
+        "latitude": ",".join([str(LAT)] * len(RING_ENS)), "longitude": wrap_lons(RING_ENS),
         "hourly": ",".join(hv), "models": src["id"], "forecast_days": src["days"], "timezone": "GMT", "wind_speed_unit": "ms",
     }, url=ENSEMBLE_URL, timeout=240)
     print(f"  {src['name']} fetched (cost {http_json.last_cost})", flush=True)
