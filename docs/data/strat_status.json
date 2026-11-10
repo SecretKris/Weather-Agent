@@ -1,1 +1,1 @@
-{"ran_at": "2026-11-09T19:51:13Z", "ok": true, "error": null, "errors": [], "diagnostics": ["deterministic ring: 150s, cost 1.0", "ECMWF IFS ensemble: 1s, cost 186.5143", "ECMWF AIFS ensemble: 2s, cost 186.5143", "GFS ensemble: 1s, cost 124.0"]}
+{"ran_at": "2026-11-10T03:38:04Z", "ok": true, "error": null, "errors": [], "diagnostics": ["deterministic ring: 208s, cost 1.0"]}
