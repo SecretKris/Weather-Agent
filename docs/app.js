@@ -243,7 +243,7 @@
     });
     $("#op-leg").innerHTML = `<span><i style="border-color:var(--art)"></i>Machine snow made (median model)</span><span><i class="band" style="background:var(--art)"></i>Range across models</span>`
       + Object.keys(need).map((k) => `<span><i class="dash" style="border-color:${lineCol[k]}"></i>Needed: ${ms[k].label.toLowerCase()}</span>`).join("")
-      + `<span><i class="vline" style="border-color:var(--ink-2)"></i>Median opening day</span>`;
+      + (Object.values(ms).some((m) => m.date) ? `<span><i class="vline" style="border-color:var(--ink-2)"></i>Median opening day</span>` : "");
 
     $("#op-slopes").innerHTML = `<table><thead><tr><th>Slope</th><th>Size and depth</th><th>Snow</th></tr></thead><tbody>${op.slopes.map((x) => `<tr><td>${x.name}<small>${x.size}</small></td><td>${x.length_m} × ${x.width_m} m<small>${x.depth_cm} cm${x.features_m3 ? ` + ${x.features_m3} m³ for jumps` : ""}</small></td><td>${M3(x.snow_m3)} m³</td></tr>`).join("")}</tbody></table>`;
     const ws = Object.keys(op.rate_m3h);

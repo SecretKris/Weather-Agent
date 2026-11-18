@@ -344,6 +344,8 @@ def plan_summary(spot, plan, runs, times, start, n, dates):
         for i in range(start, n):
             vals = [get(r, i) for r in runs.values()]
             vals = [x for x in vals if x is not None]
+            if len(vals) < MIN_MODELS:   # the tail with one or two long-range models left is too thin to plot
+                vals = []
             med.append(round(median(vals)) if vals else None)
             lo.append(round(min(vals)) if vals else None)
             hi.append(round(max(vals)) if vals else None)
