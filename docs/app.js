@@ -187,7 +187,7 @@
     $("#op-h").textContent = `Getting ${s.name} running`;
     const big = ms.groomed, park = ms.park;
     $("#op-lede").textContent = `${s.name} has ${op.slopes.map((x) => `${x.name.toLowerCase()} (${x.length_m} m)`).join(", ")}${op.vertical_m ? `, on ${op.vertical_m} m of vertical` : ""}. `
-      + `Covering them takes about ${M3(park ? park.snow_m3 : big.snow_m3)} m³ of machine snow. The resort runs ${g.count} ${g.type}s, so the forecast cold decides when it can open.`;
+      + `Covering them takes about ${M3(park ? park.snow_m3 : big.snow_m3)} m³ of machine snow. The resort runs ${g.count} snow guns (${g.label}), so the forecast cold decides when it can open.`;
     const tile = (k) => {
       const m = ms[k];
       const head = m.date ? fmtDate(m.date) : m.earliest ? `Maybe ${fmtDM(m.earliest)}` : "Not in 16 days";
@@ -199,7 +199,7 @@
     const q5 = op.rate_m3h["-5"];
     const facts = [...order.map(tile),
       ["Snow to make", park ? `${M3(big.snow_m3)} · ${M3(park.snow_m3)} m³` : `${M3(big.snow_m3)} m³`, park ? "central run · with beginner hill and snowpark" : big.stage.toLowerCase()],
-      ["Snow guns", `${g.count} × fan gun`, `about ${q5} m³ an hour together at −5 °C wet-bulb`],
+      ["Snow guns", `${g.count} guns`, `${g.label} · about ${q5} m³ an hour together at −5 °C wet-bulb`],
       ["Snowmaking hours ahead", `${op.gun_hours} h`, "wet-bulb cold enough in the next 15 days (median model)"]];
     $("#op-facts").innerHTML = facts.map(([k, v, sub]) => `<div><dt>${k}</dt><dd>${v}</dd><dd class="sub">${sub}</dd></div>`).join("");
 
@@ -250,7 +250,7 @@
     $("#op-hours").innerHTML = `<table><thead><tr><th>Wet-bulb</th>${ws.map((w) => `<th>${T(+w, 0)}°</th>`).join("")}</tr></thead><tbody>
       <tr><td>Snow per hour</td>${ws.map((w) => `<td>${op.rate_m3h[w]} m³</td>`).join("")}</tr>
       ${Object.keys(ms).map((k) => `<tr><td>${ms[k].label}</td>${ws.map((w) => `<td>${ms[k].hours_at[w] ?? "–"} h</td>`).join("")}</tr>`).join("")}</tbody></table>`;
-    $("#op-note").textContent = `Slope lengths are from the resort; widths, park size and depths are estimates that can be edited in config/spots.json. Gun output follows manufacturer figures for mid-size fan guns, trimmed to ${Math.round((g.efficiency || 1) * 100)}% for real-world losses. ${g.note || ""}`;
+    $("#op-note").textContent = `Slope lengths are from the resort; widths, park size and depths are estimates that can be edited in config/spots.json. Gun output follows manufacturer figures for mid-size fan guns, trimmed to ${Math.round((g.efficiency || 1) * 100)}% for real-world losses. ${(g.groups || []).map((x) => `${x.count} ${x.type}${x.count !== 1 ? "s" : ""}: ${x.note || ""}`).join(" ")} With all guns running, water and pump capacity can be the real limit, so treat these hours as a best case.`;
   }
 
   // ---------- charts ----------

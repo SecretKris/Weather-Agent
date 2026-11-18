@@ -18,8 +18,13 @@
          {"id": "park",     "name": "Snowpark",      "length_m": 120, "width_m": 30, "depth_cm": 50, "features_m3": 400, "size": "estimate (no size published)"},
          {"id": "minipark", "name": "Kids' park",    "length_m": 60,  "width_m": 15, "depth_cm": 40, "features_m3": 60,  "size": "estimate (no size published)"}
        ],
-       "guns": {"count": 2, "type": "medium-class fan gun", "efficiency": 0.7,
-                "note": "The two new medium-class fan guns from the 'Ziemas zeme +' project are already in place for this season."},
+       "guns": {"efficiency": 0.7,
+                "groups": [
+                  {"count": 2, "type": "new fan gun", "output": 1.0, "start_wb": -2.0,
+                   "note": "Medium-class fan guns from the 'Ziemas zeme +' project, already in place."},
+                  {"count": 3, "type": "older gun", "output": 0.6, "start_wb": -3.0,
+                   "note": "Model not published: assumed to make 60% of a new fan gun's snow and to need -3 C wet-bulb to start."}
+                ]},
        "milestones": {"groomed": "central", "park": "park"},
        "weekends_first": true
      }},

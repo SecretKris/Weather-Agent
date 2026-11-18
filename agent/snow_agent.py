@@ -249,11 +249,22 @@ def resort_setup(resort):
         stages.append({**sl, "area_m2": area,
                        "snow_m3": round(area * sl["depth_cm"] / 100 + sl.get("features_m3", 0))})
     g = resort["guns"]
-    rate = lambda w: g["count"] * g.get("efficiency", 1.0) * gun_m3h(w)  # noqa: E731  m3/h for the whole resort
+    groups = g.get("groups") or [{"count": g["count"], "type": g.get("type", "fan gun"), "output": 1.0, "start_wb": FAN_GUN_CURVE[0][0]}]
+    eff = g.get("efficiency", 1.0)
+
+    def rate(w):   # m3/h for the whole resort: every gun group runs once it is cold enough for it
+        if w is None:
+            return 0.0
+        return sum(gr["count"] * gr.get("output", 1.0) * eff * gun_m3h(w)
+                   for gr in groups if w <= gr.get("start_wb", FAN_GUN_CURVE[0][0]))
+
     ids = [st["id"] for st in stages]
     miles = {pid: ids.index(sid) for pid, sid in resort["milestones"].items() if sid in ids}
     open_area = sum(st["area_m2"] for st in stages[:miles.get("groomed", 0) + 1])
-    return {"stages": stages, "rate": rate, "miles": miles, "open_area": open_area,
+    guns = {"count": sum(gr["count"] for gr in groups), "efficiency": eff,
+            "groups": [{k: gr.get(k) for k in ("count", "type", "output", "start_wb", "note")} for gr in groups],
+            "label": " + ".join(f"{gr['count']} {gr['type']}{'s' if gr['count'] != 1 else ''}" for gr in groups)}
+    return {"stages": stages, "rate": rate, "miles": miles, "open_area": open_area, "guns": guns,
             "depth_cm": stages[0]["depth_cm"]}
 
 
@@ -299,7 +310,7 @@ def plan_summary(spot, plan, runs, times, start, n, dates):
     """Turn per-model opening runs into dates, odds and hours still needed."""
     resort = spot["resort"]
     q5 = plan["rate"](-5.0)
-    out = {"slopes": [], "guns": resort["guns"], "vertical_m": resort.get("vertical_m"),
+    out = {"slopes": [], "guns": plan["guns"], "vertical_m": resort.get("vertical_m"),
            "weekends_first": bool(resort.get("weekends_first")), "milestones": {}, "hours": {}}
     for st in plan["stages"]:
         out["slopes"].append({k: st.get(k) for k in ("id", "name", "length_m", "width_m", "depth_cm", "features_m3",
@@ -692,7 +703,7 @@ def opening_lines(s, op, pid):
     if first:
         h = first["hours_at"]
         txt = (f"To open, {s['name']} needs about {first['snow_m3']:,} m³ of machine snow for the {first['stage'].lower()} "
-               f"(about {first['water_m3']:,} m³ of water). With {g['count']} {g['type']}s that is roughly {h['-5']} hours of "
+               f"(about {first['water_m3']:,} m³ of water). With {g['count']} snow guns ({g['label']}) that is roughly {h['-5']} hours of "
                f"snowmaking at −5 °C wet-bulb ({h['-3']} h at −3 °C, {h['-10']} h at −10 °C)")
         if park:
             txt += f"; the snowpark brings the total to {park['snow_m3']:,} m³, about {park['hours_at']['-5']} hours at −5 °C"
