@@ -57,6 +57,17 @@ GUN_START_AT   = -2.0     # wet-bulb C where guns start to work
 ART_MELT_FACTOR = 0.6     # machine snow is denser, melts slower
 ART_CAP_CM     = 60.0
 
+# Resort-specific snowmaking (spots with a "resort" block in config/spots.json).
+# Snow output of one medium-class fan gun in m3 of fresh machine snow per hour, by wet-bulb temperature.
+# Anchored on manufacturer datasheets (Bachler SnoTek: ~18-35 m3/h at -3 C wet-bulb for mid-size fans,
+# 67 m3/h at -5 C and 124 m3/h at -8 C for large ones); "efficiency" in the config then trims it for
+# moving hoses, pump limits, wind and downtime.
+FAN_GUN_CURVE = [(-2.0, 8.0), (-3.0, 20.0), (-5.0, 38.0), (-7.0, 52.0), (-10.0, 65.0), (-15.0, 70.0)]
+NAT_PACK = 0.35           # fresh natural snow packs down to about a third of its depth once groomed
+SNOW_PER_WATER = 2.2      # 1 m3 of water makes about 2.2 m3 of machine snow
+PLAN_MIN_DAYS = 7         # a model needs this many forecast days to vote on an opening date
+HOURS_AT = (-3, -5, -7, -10)
+
 # What "good enough to ski" means, per riding style
 PROFILES = {
     "park":    {"label": "Freestyle / park", "min_cm": 20, "full_cm": 45},
@@ -191,7 +202,21 @@ def derive_hourly(m, n):
     return snow, rain, tw
 
 
-def simulate(T, snow, rain, tw, init_cm):
+def gun_m3h(w):
+    """Fresh machine snow per medium fan gun per hour (m3) at wet-bulb w (C)."""
+    if w is None or w > FAN_GUN_CURVE[0][0]:
+        return 0.0
+    for (w1, q1), (w2, q2) in zip(FAN_GUN_CURVE, FAN_GUN_CURVE[1:]):
+        if w2 <= w <= w1:
+            return q1 + (q2 - q1) * (w - w1) / (w2 - w1)
+    return FAN_GUN_CURVE[-1][1]
+
+
+def generic_gun_cm(w):
+    return GUN_CM_H * clamp((GUN_START_AT - w) / (GUN_START_AT - GUN_FULL_AT))
+
+
+def simulate(T, snow, rain, tw, init_cm, gun_cm=generic_gun_cm):
     """Hour-by-hour snowpack: natural snow + machine snow (if resort runs guns)."""
     n = len(T)
     nat, art = [None] * n, [None] * n
@@ -203,7 +228,7 @@ def simulate(T, snow, rain, tw, init_cm):
         d += snow[i] or 0.0
         w = tw[i]
         if w is not None and w < GUN_START_AT:
-            a += GUN_CM_H * clamp((GUN_START_AT - w) / (GUN_START_AT - GUN_FULL_AT))
+            a += gun_cm(w)
         a = min(a, ART_CAP_CM)
         d *= 1 - COMPACT_H
         a *= 1 - COMPACT_H * 0.5
@@ -213,6 +238,120 @@ def simulate(T, snow, rain, tw, init_cm):
             a = max(0.0, a - melt * ART_MELT_FACTOR)
         nat[i], art[i] = d, a
     return nat, art
+
+
+# ------------------------------------------------- resort opening plan ------
+def resort_setup(resort):
+    """Slope areas and snow volumes from the config; stages are built in the listed order."""
+    stages = []
+    for sl in resort["slopes"]:
+        area = sl["length_m"] * sl["width_m"]
+        stages.append({**sl, "area_m2": area,
+                       "snow_m3": round(area * sl["depth_cm"] / 100 + sl.get("features_m3", 0))})
+    g = resort["guns"]
+    rate = lambda w: g["count"] * g.get("efficiency", 1.0) * gun_m3h(w)  # noqa: E731  m3/h for the whole resort
+    ids = [st["id"] for st in stages]
+    miles = {pid: ids.index(sid) for pid, sid in resort["milestones"].items() if sid in ids}
+    open_area = sum(st["area_m2"] for st in stages[:miles.get("groomed", 0) + 1])
+    return {"stages": stages, "rate": rate, "miles": miles, "open_area": open_area,
+            "depth_cm": stages[0]["depth_cm"]}
+
+
+def stage_need(stages, upto, nat_cm):
+    """m3 of machine snow still needed for stages[0..upto] when nat_cm of natural snow lies on the ground."""
+    packed = NAT_PACK * (nat_cm or 0.0)
+    return sum(st["area_m2"] * max(0.0, st["depth_cm"] - packed) / 100 + st.get("features_m3", 0)
+               for st in stages[:upto + 1])
+
+
+def run_plan(plan, T, tw, rain, nat, start, n):
+    """One weather model: hour by hour snow made (m3), melt losses, and when each milestone is reached."""
+    stages, miles = plan["stages"], plan["miles"]
+    total_area = sum(st["area_m2"] for st in stages[:max(miles.values()) + 1])
+    depth = plan["depth_cm"] / 100
+    cap = stage_need(stages, len(stages) - 1, 0) * 1.05   # guns stop once every slope is built (topping up after melt)
+    v, done = 0.0, {}
+    vol, need = [None] * n, {pid: [None] * n for pid in miles}
+    gun_h = 0
+    for i in range(start, n):
+        t = T[i]
+        if t is None:
+            break
+        if plan["rate"](tw[i]) > 0:
+            gun_h += 1
+        q = plan["rate"](tw[i]) if v < cap else 0.0
+        v = min(cap, v + q)
+        covered = min(total_area, v / depth) if depth > 0 else 0.0
+        if t > 0:   # machine snow melts slower than natural snow
+            loss_cm = (MELT_CM_PER_DEGH * t + RAIN_MELT_CM_PER_MM * (rain[i] or 0.0)) * ART_MELT_FACTOR
+            v = max(0.0, v - covered * loss_cm / 100)
+        vol[i] = v
+        for pid, k in miles.items():
+            nd = stage_need(stages, k, nat[i])
+            need[pid][i] = nd
+            if pid not in done and v >= nd:
+                done[pid] = i
+    last = max((i for i in range(start, n) if vol[i] is not None), default=None)
+    return {"vol": vol, "need": need, "done": done, "last": last, "gun_h": gun_h}
+
+
+def plan_summary(spot, plan, runs, times, start, n, dates):
+    """Turn per-model opening runs into dates, odds and hours still needed."""
+    resort = spot["resort"]
+    q5 = plan["rate"](-5.0)
+    out = {"slopes": [], "guns": resort["guns"], "vertical_m": resort.get("vertical_m"),
+           "weekends_first": bool(resort.get("weekends_first")), "milestones": {}, "hours": {}}
+    for st in plan["stages"]:
+        out["slopes"].append({k: st.get(k) for k in ("id", "name", "length_m", "width_m", "depth_cm", "features_m3",
+                                                      "area_m2", "snow_m3", "size")})
+    out["rate_m3h"] = {str(w): r1(plan["rate"](w), 0) for w in HOURS_AT}
+    labels = {"groomed": "Central run open", "park": "Snowpark ready"}
+    for pid, k in plan["miles"].items():
+        base = stage_need(plan["stages"], k, 0)
+        voters, opened, remaining = [], [], []
+        for mid, r in runs.items():
+            if r["last"] is None or (r["last"] - start) < PLAN_MIN_DAYS * 24:
+                continue
+            voters.append(mid)
+            if pid in r["done"]:
+                d = (date.fromisoformat(times[r["done"][pid]][:10]) + timedelta(days=1)).isoformat()
+                opened.append(d)
+            else:
+                remaining.append(max(0.0, r["need"][pid][r["last"]] - r["vol"][r["last"]]))
+        nv = len(voters)
+        ms = {"label": labels.get(pid, pid), "stage": plan["stages"][k]["name"], "snow_m3": round(base),
+              "water_m3": round(base / SNOW_PER_WATER), "n": nv, "prob": r1(len(opened) / nv, 2) if nv else None,
+              "hours_at": {str(w): (round(base / plan["rate"](w)) if plan["rate"](w) > 0 else None) for w in HOURS_AT}}
+        ranked = sorted(opened) + [None] * (nv - len(opened))
+        mid_ix = (nv + 1) // 2 - 1 if nv else None
+        ms["date"] = ranked[mid_ix] if nv and ranked[mid_ix] else None
+        ms["earliest"] = min(opened) if opened else None
+        ms["latest"] = max(opened) if opened else None
+        ms["opened_models"] = len(opened)
+        if ms["date"] and out["weekends_first"]:
+            d = date.fromisoformat(ms["date"])
+            while d.weekday() < 5:
+                d += timedelta(days=1)
+            ms["weekend"] = d.isoformat()
+        if remaining:
+            rem = median(remaining)
+            ms["remaining_m3"] = round(rem)
+            ms["remaining_h5"] = round(rem / q5) if q5 > 0 else None
+        out["milestones"][pid] = ms
+    # hourly consensus for the chart
+    def stat(get):
+        med, lo, hi = [], [], []
+        for i in range(start, n):
+            vals = [get(r, i) for r in runs.values()]
+            vals = [x for x in vals if x is not None]
+            med.append(round(median(vals)) if vals else None)
+            lo.append(round(min(vals)) if vals else None)
+            hi.append(round(max(vals)) if vals else None)
+        return {"med": med, "lo": lo, "hi": hi}
+    out["hourly"] = {"vol": stat(lambda r, i: r["vol"][i]),
+                     "need": {pid: stat(lambda r, i, p=pid: r["need"][p][i])["med"] for pid in plan["miles"]}}
+    out["gun_hours"] = r1(median([r["gun_h"] for r in runs.values()]) or 0, 0)
+    return out
 
 
 # ------------------------------------------------------------ one spot -----
@@ -242,12 +381,20 @@ def analyse_spot(spot, raw):
     seeds = [m["snow_depth"][0] * 100 for m in series.values() if m["snow_depth"][0] is not None]
     init_cm = median(seeds) or 0.0
 
-    per_model = {}
+    plan = resort_setup(spot["resort"]) if spot.get("resort") else None
+    gun_cm = generic_gun_cm
+    if plan:   # machine snow spread over the slopes that open first
+        gun_cm = lambda w: plan["rate"](w) / plan["open_area"] * 100  # noqa: E731
+
+    per_model, runs = {}, {}
     for mid, m in series.items():
         snow, rain, tw = derive_hourly(m, N)
-        nat, art = simulate(m["temperature_2m"], snow, rain, tw, init_cm)
+        nat, art = simulate(m["temperature_2m"], snow, rain, tw, init_cm, gun_cm)
         per_model[mid] = {"T": m["temperature_2m"], "G": m["wind_gusts_10m"], "snow": snow,
                           "tw": tw, "nat": nat, "art": art, "native": m["snow_depth"]}
+        if plan:
+            runs[mid] = run_plan(plan, m["temperature_2m"], tw, rain, nat, start, N)
+            per_model[mid]["ready"] = {pid: times[i][:10] for pid, i in runs[mid]["done"].items()}
 
     # ---- daily metrics per model ----
     def model_day(pm, ix):
@@ -274,9 +421,15 @@ def analyse_spot(spot, raw):
             "sm_h": sum(1 for x in tw_ok if x <= GUN_START_AT),
             "score": {},
         }
+        today_d = times[ix[0]][:10]
         for pid, prof in PROFILES.items():
-            out["score"][pid] = {"nat": ski_score(nat, t_day, gust, prof),
-                                 "pot": ski_score(nat + art, t_day, gust, prof)}
+            s_nat = ski_score(nat, t_day, gust, prof)
+            s_pot = ski_score(nat + art, t_day, gust, prof)
+            if "ready" in pm:   # resort spot: lifts only run once the slope for this style is built (the day after)
+                ready = pm["ready"].get(pid)
+                if ready is None or ready >= today_d:
+                    s_pot = s_nat
+            out["score"][pid] = {"nat": s_nat, "pot": s_pot}
         return out
 
     md = {mid: [model_day(pm, day_idx[d]) for d in dates] for mid, pm in per_model.items()}
@@ -403,7 +556,10 @@ def analyse_spot(spot, raw):
     hourly = {"time": times[start:], "n": n_h, "temp": t_h, "snow": snow_h, "nat": nat_h,
               "pot": pot_h, "tw": tw_h, "gust": gust_h, "native": native_h}
 
+    opening = plan_summary(spot, plan, runs, times, start, N, dates) if plan else None
+
     return {
+        "opening": opening,
         "id": spot["id"], "name": spot["name"], "region": spot["region"], "kind": spot["kind"],
         "lat": spot["lat"], "lon": spot["lon"], "elevation": spot.get("elevation"),
         "initial_snow_cm": r1(init_cm),
@@ -489,6 +645,9 @@ def spot_briefing(s, pid):
                          f"{pct(cc['prob'])} of models skiable, cover about {cc['cover']} cm with snowmaking).")
         else:
             lines.append("No day even comes close: there is no snow on the ground and nothing builds up.")
+    op = s.get("opening")
+    if op:
+        lines.extend(opening_lines(s, op, pid))
     if nat and (not pot or nat["date"] <= pot["date"]):
         lines.append(f"Natural snow alone could be enough from {fmt_date(nat['date'])} ({pct(nat['prob'])} of models).")
     elif not nat:
@@ -519,6 +678,37 @@ def spot_briefing(s, pid):
     elif ol:
         lines.append("Weeks ahead: the seasonal ensemble does not show a sustained cold week in the next 3 months.")
     return {"headline": head, "lines": lines}
+
+
+def opening_lines(s, op, pid):
+    """Briefing lines for a resort with known slope sizes."""
+    ms = op["milestones"]
+    g = op["guns"]
+    first = ms.get("groomed")
+    park = ms.get("park")
+    out = []
+    if first:
+        h = first["hours_at"]
+        txt = (f"To open, {s['name']} needs about {first['snow_m3']:,} m³ of machine snow for the {first['stage'].lower()} "
+               f"(about {first['water_m3']:,} m³ of water). With {g['count']} {g['type']}s that is roughly {h['-5']} hours of "
+               f"snowmaking at −5 °C wet-bulb ({h['-3']} h at −3 °C, {h['-10']} h at −10 °C)")
+        if park:
+            txt += f"; the snowpark brings the total to {park['snow_m3']:,} m³, about {park['hours_at']['-5']} hours at −5 °C"
+        out.append(txt + ".")
+    m = ms.get(pid) or first
+    if m:
+        what = m["label"].lower()
+        if m["date"]:
+            rng = "" if m["earliest"] == m["latest"] else f", models range {fmt_date(m['earliest'])} to {fmt_date(m['latest'])}"
+            wk = f" First weekend day: {fmt_date(m['weekend'])}." if m.get("weekend") and m["weekend"] != m["date"] else ""
+            out.append(f"Earliest ski day ({what}): {fmt_date(m['date'])}, the day after the guns finish "
+                       f"({m['opened_models']} of {m['n']} models get there{rng}).{wk}")
+        else:
+            got = f"{m['opened_models']} of {m['n']} models" if m["n"] else "no model"
+            more = (f" The rest still lack about {m['remaining_m3']:,} m³ at the end of their forecast, "
+                    f"about {m['remaining_h5']} more hours at −5 °C wet-bulb.") if m.get("remaining_m3") is not None else ""
+            out.append(f"{m['label']}: not within the forecast - only {got} make enough snow in time.{more}")
+    return out
 
 
 def model_note(s):
@@ -640,6 +830,7 @@ def main():
             "profiles": PROFILES, "snow_gun_cm_per_hour": GUN_CM_H,
             "snowmaking_wetbulb_start_c": GUN_START_AT, "snowmaking_wetbulb_full_c": GUN_FULL_AT,
             "melt_cm_per_degree_hour": MELT_CM_PER_DEGH,
+            "fan_gun_curve_m3h": FAN_GUN_CURVE, "natural_snow_pack": NAT_PACK, "snow_per_water": SNOW_PER_WATER,
         },
         "models": {k: v for k, v in MODELS.items()},
         "summary": summary,

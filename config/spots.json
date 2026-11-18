@@ -8,6 +8,21 @@
     {"id": "milzkalns",   "name": "Milzkalns",   "region": "Tukums / Smārde",  "lat": 56.954, "lon": 23.337, "elevation": 93,  "kind": "ski"},
     {"id": "ventspils",   "name": "Ventspils",   "region": "Kurzeme coast",    "lat": 57.390, "lon": 21.564, "elevation": 33,  "kind": "ski"},
     {"id": "sarkankalns", "name": "Sarkaņkalns", "region": "Rēzekne / Latgale","lat": 56.510, "lon": 27.340, "elevation": 180, "kind": "ski"},
+    {"id": "briezkalns",  "name": "Briežkalns",  "region": "Ērgļi / Madona",   "lat": 56.9077, "lon": 25.6305, "elevation": 190, "kind": "ski",
+     "resort": {
+       "_comment": "Sizes from briezkalns.lv (330 m central run, 130 m beginner hill, snowpark, kids' park) and skiresort.info (173-205 m, 32 m vertical). Widths, park size and snow depths are NOT published: they are estimates, marked 'estimate'. Edit them if you learn the real numbers.",
+       "vertical_m": 32,
+       "slopes": [
+         {"id": "central",  "name": "Central run",   "length_m": 330, "width_m": 30, "depth_cm": 40, "features_m3": 0,   "size": "length published, width estimate"},
+         {"id": "beginner", "name": "Beginner hill", "length_m": 130, "width_m": 25, "depth_cm": 35, "features_m3": 0,   "size": "length published, width estimate"},
+         {"id": "park",     "name": "Snowpark",      "length_m": 120, "width_m": 30, "depth_cm": 50, "features_m3": 400, "size": "estimate (no size published)"},
+         {"id": "minipark", "name": "Kids' park",    "length_m": 60,  "width_m": 15, "depth_cm": 40, "features_m3": 60,  "size": "estimate (no size published)"}
+       ],
+       "guns": {"count": 2, "type": "medium-class fan gun", "efficiency": 0.7,
+                "note": "Two new medium-class fan guns bought in the 'Ziemas zeme +' project (03.2026-04.2027)."},
+       "milestones": {"groomed": "central", "park": "park"},
+       "weekends_first": true
+     }},
     {"id": "riga",        "name": "Rīga",        "region": "City reference",   "lat": 56.946, "lon": 24.106, "elevation": 6,   "kind": "city"}
   ]
 }

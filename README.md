@@ -9,6 +9,15 @@ GitHub Actions (every 3 h)                GitHub Pages (free)
   + a 50-member seasonal ensemble            so history is kept               animates the hill
 ```
 
+## Opening estimate for hills with known slope sizes (Briežkalns)
+
+For a spot with a `resort` block in `config/spots.json` the agent goes further than "could guns run":
+
+1. Snow needed per slope = length × width × base depth (+ extra for park jumps). Briežkalns: 330 m central run, 130 m beginner hill, snowpark and kids' park (lengths from briezkalns.lv; widths, park size and depths are estimates you can edit).
+2. Snow made per hour = number of guns × fan-gun output at the forecast wet-bulb (about 8 m³/h at −2 °C up to 70 m³/h at −15 °C per gun, from manufacturer datasheets) × an efficiency factor.
+3. Every weather model builds the slopes hour by hour, in config order, losing snow in thaws; natural snow lowers what is still needed.
+4. The central run opens the day after it is covered (groomed style); the snowpark the day after it is covered too (freestyle style). The earliest ski day is the date at least half of the models reach.
+
 ## Stratosphere watch (polar vortex and sudden warmings)
 
 A second module, `agent/strat.py`, runs after the snow agent and writes `docs/data/strat.json`. The dashboard shows it as its own section.

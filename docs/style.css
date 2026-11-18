@@ -199,3 +199,14 @@ section.strat .lede { margin: 0 0 12px; color: var(--ink-2); max-width: 66ch; }
 .tip i.dot.band { border-radius: 2px; opacity: .6; }
 .sgap-legend { margin-top: 30px; }
 .sgap-legend + .sgap { margin-top: 6px; }
+
+/* resort opening plan */
+.legend i.vline { width: 0; height: 13px; border-top: 0; border-left: 1.5px solid; margin: 0 8px 0 4px; }
+section.opening .lede { margin: 0 0 12px; color: var(--ink-2); max-width: 66ch; }
+section.opening h3 { margin-top: 28px; }
+section.opening .sgap h3 { margin-top: 0; }
+section.opening .twocol > div { min-width: 0; }
+#op-slopes td small { display: block; font-size: .8rem; color: var(--ink-3); white-space: normal; }
+#op-slopes td { white-space: normal; vertical-align: top; }
+@media (max-width: 520px) { section.opening th, section.opening td { padding: 6px 6px; } }
+#op-slopes td:last-child { white-space: nowrap; }

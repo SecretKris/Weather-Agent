@@ -79,7 +79,7 @@
 
   // ---------- render ----------
   function renderAll() {
-    renderControls(); renderHero(); renderPlates(); renderDays(); renderCharts(); renderModels(); renderOutlook(); renderBrief(); renderHow(); renderTable(); renderFooter();
+    renderControls(); renderHero(); renderPlates(); renderDays(); renderOpening(); renderCharts(); renderModels(); renderOutlook(); renderBrief(); renderHow(); renderTable(); renderFooter();
     syncHour();
   }
 
@@ -176,6 +176,83 @@
     });
   }
 
+  // ---------- resort opening plan (spots with known slope sizes) ----------
+  const M3 = (v) => (v == null ? "–" : Math.round(v).toLocaleString("en-GB"));
+  function renderOpening() {
+    const s = spot(), op = s.opening, sec = $("#opening");
+    if (!op || !state.machine) { sec.hidden = true; if (charts.open) charts.open = null; return; }
+    sec.hidden = false;
+    const ms = op.milestones, g = op.guns, mine = state.profile;
+    const order = [mine, ...Object.keys(ms).filter((k) => k !== mine)].filter((k) => ms[k]);
+    $("#op-h").textContent = `Getting ${s.name} running`;
+    const big = ms.groomed, park = ms.park;
+    $("#op-lede").textContent = `${s.name} has ${op.slopes.map((x) => `${x.name.toLowerCase()} (${x.length_m} m)`).join(", ")}${op.vertical_m ? `, on ${op.vertical_m} m of vertical` : ""}. `
+      + `Covering them takes about ${M3(park ? park.snow_m3 : big.snow_m3)} m³ of machine snow. The resort runs ${g.count} ${g.type}s, so the forecast cold decides when it can open.`;
+    const tile = (k) => {
+      const m = ms[k];
+      const head = m.date ? fmtDate(m.date) : "Not in 16 days";
+      let sub;
+      if (m.date) sub = `${m.opened_models} of ${m.n} models${m.earliest !== m.latest ? ` · range ${fmtDM(m.earliest)}–${fmtDM(m.latest)}` : ""}${m.weekend && m.weekend !== m.date ? ` · first weekend ${fmtDM(m.weekend)}` : ""}`;
+      else sub = m.remaining_h5 != null ? `still about ${m.remaining_h5} h of −5 °C snowmaking short` : `${m.opened_models} of ${m.n} models get there`;
+      return [m.label + (k === mine ? " · your style" : ""), head, sub];
+    };
+    const q5 = op.rate_m3h["-5"];
+    const facts = [...order.map(tile),
+      ["Snow to make", park ? `${M3(big.snow_m3)} · ${M3(park.snow_m3)} m³` : `${M3(big.snow_m3)} m³`, park ? "central run · with beginner hill and snowpark" : big.stage.toLowerCase()],
+      ["Snow guns", `${g.count} × fan gun`, `about ${q5} m³ an hour together at −5 °C wet-bulb`],
+      ["Snowmaking hours ahead", `${op.gun_hours} h`, "wet-bulb cold enough in the next 15 days (median model)"]];
+    $("#op-facts").innerHTML = facts.map(([k, v, sub]) => `<div><dt>${k}</dt><dd>${v}</dd><dd class="sub">${sub}</dd></div>`).join("");
+
+    // chart: snow made vs needed
+    const H = op.hourly, n = H.vol.med.length, need = H.need;
+    const vals = [...H.vol.hi, ...Object.values(need).flat()].filter((v) => v != null);
+    const y1 = Math.max(1000, ...vals) * 1.12;
+    const lineCol = { groomed: "var(--ink-2)", park: "var(--v-great)" };
+    charts.open = chart($("#op-chart"), {
+      n, y0: 0, y1, yTicks: niceTicks(0, y1, 4), yFmt: (v) => (v >= 1000 ? (v / 1000).toLocaleString("en-GB") + "k" : v) + " m³",
+      label: `Machine snow ${s.name} could make in the next 15 days compared with what each slope needs`, rightPad: 10,
+      tip: (i) => {
+        const t = s.hourly.time[i];
+        let o = `<b>${fmtDate(t.slice(0, 10))}, ${t.slice(11, 16)}</b>`;
+        o += tipRow("Snow made", `${M3(H.vol.med[i])} m³ <span style="display:inline;color:var(--ink-3);font-weight:400"> (${M3(H.vol.lo[i])} to ${M3(H.vol.hi[i])})</span>`);
+        for (const k of Object.keys(need)) o += tipRow(`Needed: ${ms[k].label.toLowerCase()}`, `${M3(need[k][i])} m³`);
+        o += tipRow("Wet-bulb", `${T(s.hourly.tw.med[i])} °C`);
+        return o;
+      },
+      draw: ({ x, y, line, band, m, iw }) => {
+        let o = `<path d="${band(H.vol.lo, H.vol.hi)}" fill="var(--art)" opacity=".2"/>`;
+        const labels = [];
+        for (const k of Object.keys(need)) {
+          o += `<path d="${line(need[k])}" fill="none" stroke="${lineCol[k] || "var(--ink-2)"}" stroke-width="1.5" stroke-dasharray="5 4"/>`;
+          const v0 = need[k].find((v) => v != null);
+          labels.push({ y: y(v0), text: `${M3(v0)} m³: ${ms[k].label.toLowerCase()}`, col: lineCol[k] });
+        }
+        labels.sort((a, b) => a.y - b.y);
+        for (let i = 1; i < labels.length; i++) if (labels[i].y - labels[i - 1].y < 16) labels[i].y = labels[i - 1].y + 16;
+        o += labels.map((l) => `<text class="lbl" x="${m.l + 6}" y="${l.y - 6}" style="fill:${l.col}">${l.text}</text>`).join("");
+        o += `<path d="${line(H.vol.med)}" fill="none" stroke="var(--art)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+        for (const k of Object.keys(ms)) {
+          const d = ms[k].date;
+          if (!d) continue;
+          const i = s.hourly.time.findIndex((t) => t.startsWith(d + "T09"));
+          if (i < 0) continue;
+          o += `<line x1="${x(i)}" x2="${x(i)}" y1="${m.t}" y2="${y(0)}" stroke="${lineCol[k]}" stroke-width="1" opacity=".8"/><circle cx="${x(i)}" cy="${y(need[k][i] ?? 0)}" r="4" fill="${lineCol[k]}"/>`;
+        }
+        return o;
+      },
+    });
+    $("#op-leg").innerHTML = `<span><i style="border-color:var(--art)"></i>Machine snow made (median model)</span><span><i class="band" style="background:var(--art)"></i>Range across models</span>`
+      + Object.keys(need).map((k) => `<span><i class="dash" style="border-color:${lineCol[k]}"></i>Needed: ${ms[k].label.toLowerCase()}</span>`).join("")
+      + `<span><i class="vline" style="border-color:var(--ink-2)"></i>Median opening day</span>`;
+
+    $("#op-slopes").innerHTML = `<table><thead><tr><th>Slope</th><th>Size and depth</th><th>Snow</th></tr></thead><tbody>${op.slopes.map((x) => `<tr><td>${x.name}<small>${x.size}</small></td><td>${x.length_m} × ${x.width_m} m<small>${x.depth_cm} cm${x.features_m3 ? ` + ${x.features_m3} m³ for jumps` : ""}</small></td><td>${M3(x.snow_m3)} m³</td></tr>`).join("")}</tbody></table>`;
+    const ws = Object.keys(op.rate_m3h);
+    $("#op-hours").innerHTML = `<table><thead><tr><th>Wet-bulb</th>${ws.map((w) => `<th>${T(+w, 0)}°</th>`).join("")}</tr></thead><tbody>
+      <tr><td>Snow per hour</td>${ws.map((w) => `<td>${op.rate_m3h[w]} m³</td>`).join("")}</tr>
+      ${Object.keys(ms).map((k) => `<tr><td>${ms[k].label}</td>${ws.map((w) => `<td>${ms[k].hours_at[w] ?? "–"} h</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+    $("#op-note").textContent = `Slope lengths are from the resort; widths, park size and depths are estimates that can be edited in config/spots.json. Gun output follows manufacturer figures for mid-size fan guns, trimmed to ${Math.round((g.efficiency || 1) * 100)}% for real-world losses. ${g.note || ""}`;
+  }
+
   // ---------- charts ----------
   const niceTicks = (lo, hi, count) => {
     const raw = (hi - lo) / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
@@ -197,7 +274,8 @@
     let g = "";
     for (const v of cfg.yTicks) g += `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1" opacity=".7"/><text x="${m.l - 8}" y="${y(v) + 4}" text-anchor="end">${cfg.yFmt(v)}</text>`;
     const times = hourly().time;
-    for (let i = 0; i < n; i++) if (times[i].endsWith("T00:00") && ((i / 24) | 0) % 2 === 0) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${m.t + ih}" y2="${m.t + ih + 4}" stroke="var(--ink-3)"/><text x="${x(i)}" y="${H - 8}" text-anchor="middle">${fmtDM(times[i].slice(0, 10))}</text>`;
+    const every = iw < 420 ? 4 : 2;   // fewer date labels on narrow screens so they never collide
+    for (let i = 0; i < n; i++) if (times[i].endsWith("T00:00") && ((i / 24) | 0) % every === 0) g += `<line x1="${x(i)}" x2="${x(i)}" y1="${m.t + ih}" y2="${m.t + ih + 4}" stroke="var(--ink-3)"/><text x="${x(i)}" y="${H - 8}" text-anchor="middle">${fmtDM(times[i].slice(0, 10))}</text>`;
     const body = cfg.draw({ x, y, line, band, m, iw, ih, W, H });
     const cid = "c" + Math.random().toString(36).slice(2, 8);
     const svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${cfg.label}"><clipPath id="${cid}"><rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}"/></clipPath>${g}<g clip-path="url(#${cid})">${body}</g><line class="mk" y1="${m.t}" y2="${m.t + ih}" stroke="var(--ink)" stroke-width="1.5" opacity="0"/><rect class="hit" x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" style="touch-action:pan-y"/></svg><div class="tip"></div>`;
@@ -333,6 +411,7 @@
       <p><b>Machine snow.</b> Guns start working when the wet-bulb temperature drops below ${a.snowmaking_wetbulb_start_c} °C and reach full output at ${a.snowmaking_wetbulb_full_c} °C, building up to ${a.snow_gun_cm_per_hour} cm an hour. This is a "could the resort do it" estimate, not a promise that they will.</p>
       <p><b>Score.</b> Each day gets 0 to 100: up to 70 points for snow cover, 20 for comfortable daytime temperature (about −10 to 0 °C), 10 for wind below 45 km/h gusts. Skiable is ${a.skiable_score} or more, great is ${a.great_score}. ${p.park.label} needs ${p.park.min_cm} cm to score at all and ${p.park.full_cm} cm for full marks; ${p.groomed.label.toLowerCase()} needs ${p.groomed.min_cm} and ${p.groomed.full_cm} cm.</p>
       <p><b>"X% of models".</b> The share of reporting models whose own simulation scores that day as skiable. A first ski day needs at least half of them, and the next day cannot collapse.</p>
+      ${state.data.spots.some((x) => x.opening) ? `<p><b>Hills with known slope sizes.</b> Where the resort's slopes are known (now Briežkalns), the agent works out the snow volume each slope needs, converts it to hours of its own snow guns at the forecast wet-bulb temperature, and lets every weather model build the slopes hour by hour, losing some snow in thaws. Lifts only count as running from the day after a slope is finished: the central run for groomed skiing, the snowpark for freestyle.</p>` : ""}
       <p><b>Weeks ahead.</b> ECMWF's 50-member seasonal ensemble. Beyond about three weeks it has little skill for individual weeks, so read it as "how often does a cold week happen across 50 plausible winters".</p>`;
   }
 
@@ -401,7 +480,7 @@
     $("#machine").onchange = (e) => { state.machine = e.target.checked; store.set("machine", state.machine); renderAll(); };
     $("#range").addEventListener("input", (e) => setHour(+e.target.value, true));
     $("#play").onclick = () => togglePlay();
-    let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (state.data) { renderCharts(); renderOutlook(); syncHour(); } }, 150); });
+    let rz; window.addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => { if (state.data) { renderOpening(); renderCharts(); renderOutlook(); syncHour(); } }, 150); });
     document.addEventListener("visibilitychange", () => { if (!document.hidden) load(false); });
     setInterval(() => load(false), REFRESH_MS);
     setInterval(() => state.data && renderStatus(), 60000);
