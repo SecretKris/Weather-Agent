@@ -707,7 +707,11 @@ def opening_lines(s, op, pid):
             got = f"{m['opened_models']} of {m['n']} models" if m["n"] else "no model"
             more = (f" The rest still lack about {m['remaining_m3']:,} m³ at the end of their forecast, "
                     f"about {m['remaining_h5']} more hours at −5 °C wet-bulb.") if m.get("remaining_m3") is not None else ""
-            out.append(f"{m['label']}: not within the forecast - only {got} make enough snow in time.{more}")
+            early = ""
+            if m["earliest"]:
+                span = fmt_date(m["earliest"]) if m["earliest"] == m["latest"] else f"{fmt_date(m['earliest'])} to {fmt_date(m['latest'])}"
+                early = f" (those open it {span})"
+            out.append(f"{m['label']}: no majority date yet - only {got} make enough snow in time{early}.{more}")
     return out
 
 

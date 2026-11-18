@@ -190,10 +190,10 @@
       + `Covering them takes about ${M3(park ? park.snow_m3 : big.snow_m3)} m³ of machine snow. The resort runs ${g.count} ${g.type}s, so the forecast cold decides when it can open.`;
     const tile = (k) => {
       const m = ms[k];
-      const head = m.date ? fmtDate(m.date) : "Not in 16 days";
+      const head = m.date ? fmtDate(m.date) : m.earliest ? `Maybe ${fmtDM(m.earliest)}` : "Not in 16 days";
       let sub;
       if (m.date) sub = `${m.opened_models} of ${m.n} models${m.earliest !== m.latest ? ` · range ${fmtDM(m.earliest)}–${fmtDM(m.latest)}` : ""}${m.weekend && m.weekend !== m.date ? ` · first weekend ${fmtDM(m.weekend)}` : ""}`;
-      else sub = m.remaining_h5 != null ? `still about ${m.remaining_h5} h of −5 °C snowmaking short` : `${m.opened_models} of ${m.n} models get there`;
+      else sub = (m.earliest ? `only ${m.opened_models} of ${m.n} models get there · ` : "") + (m.remaining_h5 != null ? `the rest are about ${m.remaining_h5} h of −5 °C snowmaking short` : `${m.opened_models} of ${m.n} models get there`);
       return [m.label + (k === mine ? " · your style" : ""), head, sub];
     };
     const q5 = op.rate_m3h["-5"];
