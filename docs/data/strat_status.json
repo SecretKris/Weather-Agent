@@ -1,1 +1,1 @@
-{"ran_at": "2026-11-19T11:36:01Z", "ok": true, "error": null, "errors": ["deterministic models: HTTP 429: {\"reason\":\"Daily API request limit exceeded. Please try again tomorrow.\",\"error\":true}", "deterministic models: showing the previous run"], "diagnostics": ["deterministic ring: 0s, cost None", "ECMWF IFS ensemble: 2s, cost 186.5143", "ECMWF AIFS ensemble: 2s, cost 186.5143", "GFS ensemble: 2s, cost 124.0"]}
+{"ran_at": "2026-11-19T20:36:02Z", "ok": true, "error": null, "errors": [], "diagnostics": ["deterministic ring: 127s, cost 1.0"]}
